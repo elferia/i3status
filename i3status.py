@@ -79,12 +79,12 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
         chain.from_iterable(
             gpu_info(h, i) for i, h in enumerate(device_handles)))
     modified_status.extend(
-        {'full_text': f'{s.interface} Rx: {s.receive.bytes / 1024:.2f} KiB/s '
-         f'Tx: {s.transmit.bytes / 1024:.2f} KiB/s', 'name': s.interface
+        {'full_text': f'{s.interface} Rx: {s.receive.bytes / 1024:.1f} KiB/s '
+         f'Tx: {s.transmit.bytes / 1024:.1f} KiB/s', 'name': s.interface
          } for s in net_diff)
     old_netstat = new_netstat
     modified_status.append(
-        dict(full_text=f'{power / 1_000_000:.2f} W', name='power'))
+        dict(full_text=f'{power / 1_000_000:.1f} W', name='power'))
     modified_status.extend(status)
     return modified_status
 
@@ -96,7 +96,7 @@ def gpu_info(gpu_handle, i: int = 0) -> List[Dict[str, Any]]:
     free_memory = (
         pynvml.nvmlDeviceGetMemoryInfo(gpu_handle).free / 1024 / 1024 / 1024)
     return [
-        dict(full_text=f'{power:.2f} W', name=f'gpu{i}_power'),
+        dict(full_text=f'{power:.1f} W', name=f'gpu{i}_power'),
         dict(full_text=f'T: {temperature} ℃', name=f'gpu{i}_temperature'),
         dict(full_text=f'{free_memory:.1f} GiB', name=f'gpu{i}_free_memory')]
 
