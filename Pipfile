@@ -5,8 +5,9 @@ verify_ssl = true
 
 [dev-packages]
 autopep8 = "*"
+ipython = "*"
 
 [packages]
+nvidia-ml-py = "<100"
 
 [requires]
-python_version = "3.7"

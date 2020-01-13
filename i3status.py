@@ -1,13 +1,15 @@
 from __future__ import annotations
 from collections import namedtuple
 from functools import partial
-from itertools import islice, repeat
+from itertools import chain, islice, repeat
 import json
 from numbers import Real
 from operator import sub, truediv
 from sys import stdin
 from time import time
-from typing import Any, Iterable, List, Sequence, TextIO, Tuple
+from typing import Any, Dict, Iterable, List, Sequence, TextIO, Tuple
+
+import pynvml
 
 ENERGY_PATH = '/sys/class/powercap/intel-rapl:0/energy_uj'
 NET_STAT_PATH = '/proc/net/dev'
@@ -72,15 +74,31 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
     new_netstat = NetStat.load(f_netstat)
     net_diff = NetStat.diff(new_netstat, old_netstat, new_time - old_time)
     old_energy, old_time = new_energy, new_time
-    modified_status = [
+
+    modified_status = list(
+        chain.from_iterable(
+            gpu_info(h, i) for i, h in enumerate(device_handles)))
+    modified_status.extend(
         {'full_text': f'{s.interface} Rx: {s.receive.bytes / 1024:.2f} KiB/s '
          f'Tx: {s.transmit.bytes / 1024:.2f} KiB/s', 'name': s.interface
-         } for s in net_diff]
+         } for s in net_diff)
     old_netstat = new_netstat
     modified_status.append(
         dict(full_text=f'{power / 1_000_000:.2f} W', name='power'))
     modified_status.extend(status)
     return modified_status
+
+
+def gpu_info(gpu_handle, i: int = 0) -> List[Dict[str, Any]]:
+    power = pynvml.nvmlDeviceGetPowerUsage(gpu_handle) / 1000
+    temperature = pynvml.nvmlDeviceGetTemperature(
+        gpu_handle, pynvml.NVML_TEMPERATURE_GPU)
+    free_memory = (
+        pynvml.nvmlDeviceGetMemoryInfo(gpu_handle).free / 1024 / 1024 / 1024)
+    return [
+        dict(full_text=f'{power:.2f} W', name=f'gpu{i}_power'),
+        dict(full_text=f'T: {temperature} ℃', name=f'gpu{i}_temperature'),
+        dict(full_text=f'{free_memory:.1f} GiB', name=f'gpu{i}_free_memory')]
 
 
 _print(input())  # Skip the first line which contains the version header.
@@ -91,6 +109,9 @@ old_energy = int(f.read())
 old_time = time()
 f_netstat = open(NET_STAT_PATH, buffering=1)
 old_netstat = NetStat.load(f_netstat)
+pynvml.nvmlInit()
+device_handles = list(
+    map(pynvml.nvmlDeviceGetHandleByIndex, range(pynvml.nvmlDeviceGetCount())))
 
 for line in stdin:
     prefix = ',' if line.startswith(',') else ''
