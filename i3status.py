@@ -98,9 +98,9 @@ def gpu_info(gpu_handle, i: int = 0) -> List[Dict[str, Any]]:
     free_memory = (
         pynvml.nvmlDeviceGetMemoryInfo(gpu_handle).free / 1024 / 1024 / 1024)
     return [
-        dict(full_text=f'{power:.1f} W', name=f'gpu{i}_power'),
-        dict(full_text=f'T: {temperature} ℃', name=f'gpu{i}_temperature'),
-        dict(full_text=f'{free_memory:.1f} GiB', name=f'gpu{i}_free_memory')]
+        dict(full_text=f'GPU Power {power:.1f} W', name=f'gpu{i}_power'),
+        dict(full_text=f'GPU Temp {temperature} ℃', name=f'gpu{i}_temperature'),
+        dict(full_text=f'GPU RAM {free_memory:.1f} GiB', name=f'gpu{i}_free_memory')]
 
 
 _print(input())  # Skip the first line which contains the version header.
