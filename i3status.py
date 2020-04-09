@@ -83,8 +83,9 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
             gpu_info(h, i) for i, h in enumerate(device_handles)))
     modified_status.extend(
         {'full_text': f'{(ifname := s.interface.decode())} Rx: '
-         f'{float(r := best_prefix(s.receive.bytes)):.1f} {r.unit}/s '
-         f'Tx: {float(t := best_prefix(s.transmit.bytes)):.1f} {t.unit}/s',
+         f'{best_prefix(s.receive.bytes).format("{value:.1f} {unit}/s")} '
+         'Tx: '
+         f'{best_prefix(s.transmit.bytes).format("{value:.1f} {unit}/s")}',
          'name': ifname
          } for s in net_diff if s.interface == b'enp3s0')
     old_netstat = new_netstat
