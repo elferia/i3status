@@ -34,7 +34,7 @@ class NetStat:
     def __init__(self, line: str = None) -> None:
         if line is not None:
             cells = iter(line.split())
-            self.interface = next(cells).rstrip(':')
+            self.interface = next(cells).rstrip(b':')
             self.receive = Receive._make(map(
                 int, islice(cells, len(Receive._fields))))
             self.transmit = Transmit._make(map(int, cells))
@@ -82,11 +82,11 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
         chain.from_iterable(
             gpu_info(h, i) for i, h in enumerate(device_handles)))
     modified_status.extend(
-        {'full_text': f'{s.interface} Rx: '
+        {'full_text': f'{(ifname := s.interface.decode())} Rx: '
          f'{float(r := best_prefix(s.receive.bytes)):.1f} {r.unit}/s '
          f'Tx: {float(t := best_prefix(s.transmit.bytes)):.1f} {t.unit}/s',
-         'name': s.interface
-         } for s in net_diff if s.interface == 'enp3s0')
+         'name': ifname
+         } for s in net_diff if s.interface == b'enp3s0')
     old_netstat = new_netstat
     modified_status.append(
         dict(full_text=f'{power / 1_000_000:.1f} W / {TDP} W', name='power'))
@@ -111,10 +111,10 @@ def gpu_info(gpu_handle, i: int = 0) -> List[Dict[str, Any]]:
 _print(input())  # Skip the first line which contains the version header.
 _print(input())  # The second line contains the start of the infinite array.
 
-f = open(ENERGY_PATH, buffering=1)
+f = open(ENERGY_PATH, 'rb', buffering=16)
 old_energy = int(f.read())
 old_time = time()
-f_netstat = open(NET_STAT_PATH, buffering=1)
+f_netstat = open(NET_STAT_PATH, 'rb', buffering=1024)
 old_netstat = NetStat.load(f_netstat)
 pynvml.nvmlInit()
 device_handles = list(
