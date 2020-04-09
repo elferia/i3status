@@ -83,7 +83,7 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
     modified_status.extend(
         {'full_text': f'{s.interface} Rx: {s.receive.bytes / 1024:.1f} KiB/s '
          f'Tx: {s.transmit.bytes / 1024:.1f} KiB/s', 'name': s.interface
-         } for s in net_diff)
+         } for s in net_diff if s.interface == 'enp3s0')
     old_netstat = new_netstat
     modified_status.append(
         dict(full_text=f'{power / 1_000_000:.1f} W / {TDP} W', name='power'))
