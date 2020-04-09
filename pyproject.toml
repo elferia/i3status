@@ -18,3 +18,4 @@ bitmath = "^1.3.3"
 [tool.poetry.dev-dependencies]
 autopep8 = "*"
 ipython = "*"
+pycodestyle = {git = "https://github.com/PyCQA/pycodestyle.git"}
