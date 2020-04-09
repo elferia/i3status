@@ -14,6 +14,8 @@ import pynvml
 ENERGY_PATH = '/sys/class/powercap/intel-rapl:0/energy_uj'
 NET_STAT_PATH = '/proc/net/dev'
 
+TDP = 54
+
 _print = partial(print, flush=True)
 
 Transmit = namedtuple(
@@ -84,7 +86,7 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
          } for s in net_diff)
     old_netstat = new_netstat
     modified_status.append(
-        dict(full_text=f'{power / 1_000_000:.1f} W', name='power'))
+        dict(full_text=f'{power / 1_000_000:.1f} W / {TDP} W', name='power'))
     modified_status.extend(status)
     return modified_status
 
