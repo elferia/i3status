@@ -7,13 +7,14 @@ from numbers import Real
 from operator import sub, truediv
 from sys import stdin
 from time import time
-from typing import Any, Dict, Iterable, List, Sequence, TextIO, Tuple
+from typing import Any, Dict, Iterable, Iterator, List, Sequence, TextIO, Tuple
 
-from bitmath import best_prefix
+from bitmath import best_prefix, KiB
 import pynvml
 
 ENERGY_PATH = '/sys/class/powercap/intel-rapl:0/energy_uj'
 NET_STAT_PATH = '/proc/net/dev'
+MEMINFO_PATH = '/proc/meminfo'
 
 TDP = 54
 
@@ -91,8 +92,26 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
     old_netstat = new_netstat
     modified_status.append(
         dict(full_text=f'{power / 1_000_000:.1f} W / {TDP} W', name='power'))
+    modified_status.append(
+        dict(full_text='RAM '
+             f'{unused_memory().best_prefix().format("{value:.1f} {unit}")}',
+             name='free memory'))
     modified_status.extend(status)
     return modified_status
+
+
+def unused_memory() -> KiB:
+    f_meminfo.seek(0)
+    return KiB(sum(_unused_memory()))
+
+
+def _unused_memory() -> Iterator[int]:
+    c = 0
+    for line in f_meminfo:
+        if line.startswith((b'MemFree:', b'Inactive:')):
+            yield int(line.split()[1])
+            if (c := c + 1) == 2:
+                break
 
 
 def gpu_info(gpu_handle, i: int = 0) -> List[Dict[str, Any]]:
@@ -120,6 +139,7 @@ old_netstat = NetStat.load(f_netstat)
 pynvml.nvmlInit()
 device_handles = list(
     map(pynvml.nvmlDeviceGetHandleByIndex, range(pynvml.nvmlDeviceGetCount())))
+f_meminfo = open(MEMINFO_PATH, 'rb', buffering=2048)
 
 for line in stdin:
     prefix = ',' if line.startswith(',') else ''
