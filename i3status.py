@@ -93,16 +93,15 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
     modified_status.append(
         dict(full_text=f'{power / 1_000_000:.1f} W / {TDP} W', name='power'))
     modified_status.append(
-        dict(full_text='RAM '
-             f'{unused_memory().best_prefix().format("{value:.1f} {unit}")}',
-             name='free memory'))
+        dict(full_text=unused_memory().format('RAM {value:.1f} {unit}'),
+             name='unused memory'))
     modified_status.extend(status)
     return modified_status
 
 
-def unused_memory() -> KiB:
+def unused_memory() -> 'BitMath':
     f_meminfo.seek(0)
-    return KiB(sum(_unused_memory()))
+    return KiB(sum(_unused_memory())).best_prefix()
 
 
 def _unused_memory() -> Iterator[int]:
@@ -124,7 +123,7 @@ def gpu_info(gpu_handle, i: int = 0) -> List[Dict[str, Any]]:
         dict(full_text=f'GPU Power {power:.1f} W', name=f'gpu{i}_power'),
         dict(full_text=f'GPU Temp {temperature} ℃',
              name=f'gpu{i}_temperature'),
-        dict(full_text=f'GPU RAM {float(free_memory):.1f} {free_memory.unit}',
+        dict(full_text=free_memory.format('GPU RAM {value:.1f} {unit}'),
              name=f'gpu{i}_free_memory')]
 
 
