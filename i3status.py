@@ -9,6 +9,7 @@ from sys import stdin
 from time import time
 from typing import Any, Dict, Iterable, List, Sequence, TextIO, Tuple
 
+from bitmath import best_prefix
 import pynvml
 
 ENERGY_PATH = '/sys/class/powercap/intel-rapl:0/energy_uj'
@@ -81,8 +82,10 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
         chain.from_iterable(
             gpu_info(h, i) for i, h in enumerate(device_handles)))
     modified_status.extend(
-        {'full_text': f'{s.interface} Rx: {s.receive.bytes / 1024:.1f} KiB/s '
-         f'Tx: {s.transmit.bytes / 1024:.1f} KiB/s', 'name': s.interface
+        {'full_text': f'{s.interface} Rx: '
+         f'{float(r := best_prefix(s.receive.bytes)):.1f} {r.unit}/s '
+         f'Tx: {float(t := best_prefix(s.transmit.bytes)):.1f} {t.unit}/s',
+         'name': s.interface
          } for s in net_diff if s.interface == 'enp3s0')
     old_netstat = new_netstat
     modified_status.append(
@@ -95,12 +98,14 @@ def gpu_info(gpu_handle, i: int = 0) -> List[Dict[str, Any]]:
     power = pynvml.nvmlDeviceGetPowerUsage(gpu_handle) / 1000
     temperature = pynvml.nvmlDeviceGetTemperature(
         gpu_handle, pynvml.NVML_TEMPERATURE_GPU)
-    free_memory = (
-        pynvml.nvmlDeviceGetMemoryInfo(gpu_handle).free / 1024 / 1024 / 1024)
+    free_memory = best_prefix(
+        pynvml.nvmlDeviceGetMemoryInfo(gpu_handle).free)
     return [
         dict(full_text=f'GPU Power {power:.1f} W', name=f'gpu{i}_power'),
-        dict(full_text=f'GPU Temp {temperature} ℃', name=f'gpu{i}_temperature'),
-        dict(full_text=f'GPU RAM {free_memory:.1f} GiB', name=f'gpu{i}_free_memory')]
+        dict(full_text=f'GPU Temp {temperature} ℃',
+             name=f'gpu{i}_temperature'),
+        dict(full_text=f'GPU RAM {float(free_memory):.1f} {free_memory.unit}',
+             name=f'gpu{i}_free_memory')]
 
 
 _print(input())  # Skip the first line which contains the version header.
