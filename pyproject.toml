@@ -1,0 +1,19 @@
+[tool]
+[tool.dephell]
+[tool.dephell.main]
+from = "Pipfile"
+to = {format = "poetry", path = "pyproject.toml"}
+
+[tool.poetry]
+name = "root"
+version = "0.0.0"
+description = ""
+authors = []
+
+[tool.poetry.dependencies]
+python = "*"
+nvidia-ml-py = "<100"
+
+[tool.poetry.dev-dependencies]
+autopep8 = "*"
+ipython = "*"
