@@ -100,6 +100,7 @@ def modify_status(status: Sequence[Any]) -> List[Any]:
 
 
 def unused_memory() -> 'BitMath':
+    f_meminfo.read()  # to update meminfo pseudo-file
     f_meminfo.seek(0)
     return KiB(sum(_unused_memory())).best_prefix()
 
